@@ -26,8 +26,33 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Security middleware
-app.use(helmet());
+// Security middleware - CERT-In & MeitY Safe-to-Host Hardening
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'", process.env.CORS_ORIGIN || 'http://localhost:5173'],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permittedCrossDomainPolicies: { permittedPolicies: 'none' },
+  })
+);
+app.disable('x-powered-by');
 app.use(mongoSanitize());
 app.use(compression());
 
@@ -41,7 +66,7 @@ app.use(
   })
 );
 
-// Rate limiting
+// General API Rate limiting
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: Number(process.env.RATE_LIMIT_MAX) || 100,
@@ -50,6 +75,19 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api/', limiter);
+
+// Strict Brute-Force Rate Limiter for Authentication endpoints (CERT-In mandate)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // max 5 attempts per IP in 15 minutes
+  message: {
+    success: false,
+    message: 'Too many authentication attempts. Account access throttled for 15 minutes.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));

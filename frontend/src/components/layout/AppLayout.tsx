@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import GovtHeader from './GovtHeader';
+import GovtFooter from './GovtFooter';
 import { useUIStore } from '../../store/uiStore';
 
 const AppLayout: React.FC = () => {
@@ -11,10 +12,11 @@ const AppLayout: React.FC = () => {
     <div className="app-layout">
       <Sidebar />
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <Topbar />
-        <main className="page-container">
+        <GovtHeader />
+        <main className="page-container" id="main-content-area" tabIndex={-1}>
           <Outlet />
         </main>
+        <GovtFooter />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ const Enrollment = require('../models/Enrollment');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { createAuditLog } = require('../middleware/audit');
+const { maskPhone, maskEmail } = require('../utils/crypto');
 
 /**
  * @desc    Export programs report as Excel/CSV
@@ -31,10 +32,8 @@ const exportProgramsReport = asyncHandler(async (req, res, next) => {
     const rows = programs
       .map(
         (p) =>
-          `${p.programCode},"${p.title}",${p.category},${p.mode},${p.state || ''},${
-            p.startDate?.toISOString().split('T')[0]
-          },${p.endDate?.toISOString().split('T')[0]},${p.durationDays || ''},${p.status},${
-            p.enrolledCount
+          `${p.programCode},"${p.title}",${p.category},${p.mode},${p.state || ''},${p.startDate?.toISOString().split('T')[0]
+          },${p.endDate?.toISOString().split('T')[0]},${p.durationDays || ''},${p.status},${p.enrolledCount
           },${p.completedCount}`
       )
       .join('\n');
@@ -136,13 +135,17 @@ const exportTraineesReport = asyncHandler(async (req, res, next) => {
 
   const trainees = await Trainee.find(query).sort({ createdAt: -1 });
 
+  const isElevatedAdmin = req.user?.role === 'super_admin';
+
   if (format === 'csv') {
     const headers =
       'Trainee ID,First Name,Last Name,Gender,Category,Email,Phone,State,Qualification,Employment Status,Is PWD,Domicile\n';
     const rows = trainees
       .map(
         (t) =>
-          `${t.traineeId},"${t.firstName}","${t.lastName}",${t.gender},${t.socialCategory},${t.email},${t.phone},${t.address?.state || ''},${t.highestQualification},${t.employmentStatus},${t.isPWD ? 'Yes' : 'No'},${t.domicileType}`
+            `${t.traineeId},"${t.firstName}","${t.lastName}",${t.gender},${t.socialCategory},${isElevatedAdmin ? t.email : maskEmail(t.email)
+            },${isElevatedAdmin ? t.phone : maskPhone(t.phone)},${t.address?.state || ''},${t.highestQualification
+            },${t.employmentStatus},${t.isPWD ? 'Yes' : 'No'},${t.domicileType}`
       )
       .join('\n');
 
@@ -184,8 +187,8 @@ const exportTraineesReport = asyncHandler(async (req, res, next) => {
       lastName: t.lastName,
       gender: t.gender,
       socialCategory: t.socialCategory,
-      email: t.email,
-      phone: t.phone,
+      email: isElevatedAdmin ? t.email : maskEmail(t.email),
+      phone: isElevatedAdmin ? t.phone : maskPhone(t.phone),
       state: t.address?.state || '',
       district: t.address?.district || '',
       qualification: t.highestQualification,

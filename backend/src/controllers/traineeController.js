@@ -3,6 +3,21 @@ const Enrollment = require('../models/Enrollment');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { createAuditLog } = require('../middleware/audit');
+const { maskPhone, maskEmail } = require('../utils/crypto');
+
+/**
+ * Sanitizes trainee data based on user role under DPDPA 2023
+ * (Masks phone and email for non-superadmin roles)
+ */
+const sanitizeTraineeData = (traineeDoc, role) => {
+  const trainee = traineeDoc.toObject ? traineeDoc.toObject() : { ...traineeDoc };
+  if (role !== 'super_admin' && role !== 'admin') {
+    trainee.phone = maskPhone(trainee.phone);
+    trainee.alternatePhone = maskPhone(trainee.alternatePhone);
+    trainee.email = maskEmail(trainee.email);
+  }
+  return trainee;
+};
 
 /**
  * @desc    Get all trainees with filters & pagination
@@ -38,12 +53,15 @@ const getTrainees = asyncHandler(async (req, res) => {
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
+  // Apply DPDPA masking based on requesting user role
+  const sanitizedTrainees = trainees.map((t) => sanitizeTraineeData(t, req.user?.role));
+
   res.status(200).json({
     success: true,
     total,
     page: Number(page),
     pages: Math.ceil(total / limit),
-    data: trainees,
+    data: sanitizedTrainees,
   });
 });
 
@@ -59,9 +77,21 @@ const getTraineeById = asyncHandler(async (req, res, next) => {
   const enrollments = await Enrollment.find({ trainee: req.params.id })
     .populate('program', 'title programCode startDate endDate status');
 
+  const sanitized = sanitizeTraineeData(trainee, req.user?.role);
+
+  // DPDPA access audit trail: log every detailed PII profile view
+  await createAuditLog({
+    user: req.user,
+    action: 'VIEW_PII',
+    resource: 'Trainee',
+    resourceId: req.params.id,
+    details: { traineeId: trainee.traineeId },
+    ipAddress: req.ip,
+  });
+
   res.status(200).json({
     success: true,
-    data: { ...trainee.toJSON(), enrollments },
+    data: { ...sanitized, enrollments },
   });
 });
 

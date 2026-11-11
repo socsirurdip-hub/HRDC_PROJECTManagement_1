@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Menu, Sun, Moon } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatDate } from '../../utils/helpers';
@@ -20,10 +20,6 @@ const Topbar: React.FC = () => {
     toggleSidebar,
     sidebarCollapsed,
     toggleMobileSidebar,
-    theme,
-    toggleTheme,
-    fontSize,
-    setFontSize,
   } = useUIStore();
   const { user } = useAuthStore();
   const location = useLocation();
@@ -57,50 +53,6 @@ const Topbar: React.FC = () => {
       </div>
 
       <div className="topbar-right">
-        {/* Font Size Accessibility Controls (A- / A / A+) */}
-        <div className="font-switcher" title="Adjust text size">
-          <button
-            type="button"
-            className={`font-size-btn ${fontSize === 'normal' ? 'active' : ''}`}
-            onClick={() => setFontSize('normal')}
-            title="Default text size (A)"
-          >
-            A
-          </button>
-          <button
-            type="button"
-            className={`font-size-btn ${fontSize === 'large' ? 'active' : ''}`}
-            onClick={() => setFontSize('large')}
-            title="Large text size (A+)"
-          >
-            A+
-          </button>
-          <button
-            type="button"
-            className={`font-size-btn ${fontSize === 'xlarge' ? 'active' : ''}`}
-            onClick={() => setFontSize('xlarge')}
-            title="Extra large text size (A++)"
-          >
-            A++
-          </button>
-        </div>
-
-        {/* Light / Dark Mode Toggle */}
-        <button
-          type="button"
-          className="toggle-btn theme-toggle-btn"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          id="theme-toggle-btn"
-          style={{ cursor: 'pointer' }}
-        >
-          {theme === 'dark' ? (
-            <Sun size={17} style={{ color: '#f59e0b' }} />
-          ) : (
-            <Moon size={17} style={{ color: '#2455b5' }} />
-          )}
-        </button>
-
         {/* User Info */}
         <div
           style={{

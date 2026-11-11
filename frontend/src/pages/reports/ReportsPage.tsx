@@ -36,17 +36,19 @@ const ReportsPage: React.FC = () => {
     queryFn: () => traineesApi.getDemographics(),
   });
 
-  const handleExportPrograms = async () => {
+  const handleExportPrograms = async (format: 'excel' | 'pdf' = 'excel') => {
     try {
       setExportingPrograms(true);
       const res = await reportsApi.exportPrograms({
+        format,
         status: programFilter.status || undefined,
         category: programFilter.category || undefined,
         startDate: programFilter.startDate || undefined,
         endDate: programFilter.endDate || undefined,
       });
-      downloadBlob(res.data, `training_programs_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('Programs report exported successfully!');
+      const ext = format === 'pdf' ? 'pdf' : 'xlsx';
+      downloadBlob(res.data, `training_programs_report_${new Date().toISOString().slice(0, 10)}.${ext}`);
+      toast.success(`Programs ${format.toUpperCase()} report exported successfully!`);
     } catch (err) {
       toast.error('Export failed: ' + getErrorMessage(err));
     } finally {
@@ -54,16 +56,18 @@ const ReportsPage: React.FC = () => {
     }
   };
 
-  const handleExportTrainees = async () => {
+  const handleExportTrainees = async (format: 'excel' | 'pdf' = 'excel') => {
     try {
       setExportingTrainees(true);
       const res = await reportsApi.exportTrainees({
+        format,
         gender: traineeFilter.gender || undefined,
         socialCategory: traineeFilter.socialCategory || undefined,
         state: traineeFilter.state || undefined,
       });
-      downloadBlob(res.data, `trainees_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('Trainees report exported successfully!');
+      const ext = format === 'pdf' ? 'pdf' : 'xlsx';
+      downloadBlob(res.data, `trainees_report_${new Date().toISOString().slice(0, 10)}.${ext}`);
+      toast.success(`Trainees ${format.toUpperCase()} report exported successfully!`);
     } catch (err) {
       toast.error('Export failed: ' + getErrorMessage(err));
     } finally {
@@ -163,15 +167,26 @@ const ReportsPage: React.FC = () => {
             </div>
           </div>
 
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center' }}
-            onClick={handleExportPrograms}
-            disabled={exportingPrograms}
-          >
-            <Download size={16} />
-            {exportingPrograms ? 'Generating Report...' : 'Download Programs Excel (.xlsx)'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => handleExportPrograms('excel')}
+              disabled={exportingPrograms}
+            >
+              <Download size={14} />
+              {exportingPrograms ? 'Generating...' : 'Excel (.xlsx)'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => handleExportPrograms('pdf')}
+              disabled={exportingPrograms}
+            >
+              <Download size={14} />
+              {exportingPrograms ? 'Generating...' : 'PDF Report'}
+            </button>
+          </div>
         </div>
 
         {/* Trainees Export Card */}
@@ -232,15 +247,26 @@ const ReportsPage: React.FC = () => {
             </div>
           </div>
 
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', background: '#059669', borderColor: '#059669' }}
-            onClick={handleExportTrainees}
-            disabled={exportingTrainees}
-          >
-            <Download size={16} />
-            {exportingTrainees ? 'Generating Demographics...' : 'Download Trainees Excel (.xlsx)'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, justifyContent: 'center', background: '#059669', borderColor: '#059669' }}
+              onClick={() => handleExportTrainees('excel')}
+              disabled={exportingTrainees}
+            >
+              <Download size={14} />
+              {exportingTrainees ? 'Generating...' : 'Excel (.xlsx)'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => handleExportTrainees('pdf')}
+              disabled={exportingTrainees}
+            >
+              <Download size={14} />
+              {exportingTrainees ? 'Generating...' : 'PDF Report'}
+            </button>
+          </div>
         </div>
       </div>
 

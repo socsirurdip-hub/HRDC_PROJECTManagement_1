@@ -1086,13 +1086,52 @@ select.form-control option {
   white-space: nowrap;
 }
 
-.badge-success { background: var(--color-success-bg); color: var(--color-success); }
-.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
-.badge-danger  { background: var(--color-danger-bg);  color: var(--color-danger);  }
-.badge-info    { background: var(--color-info-bg);    color: var(--color-info);    }
-.badge-primary { background: rgba(36, 85, 181, 0.15); color: #7EB3FF; }
-.badge-gold    { background: rgba(200, 150, 62, 0.15); color: var(--color-secondary); }
-.badge-muted   { background: rgba(90, 110, 153, 0.15); color: var(--color-text-muted); }
+.badge-success   { background: var(--color-success-bg); color: var(--color-success); }
+.badge-warning   { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-danger    { background: var(--color-danger-bg);  color: var(--color-danger);  }
+.badge-info      { background: var(--color-info-bg);    color: var(--color-info);    }
+.badge-primary   { background: rgba(36, 85, 181, 0.15); color: #7EB3FF; }
+.badge-secondary { background: rgba(148, 163, 184, 0.15); color: #94A3B8; }
+.badge-gold      { background: rgba(200, 150, 62, 0.15); color: var(--color-secondary); }
+.badge-muted     { background: rgba(90, 110, 153, 0.15); color: var(--color-text-muted); }
+
+/* Light Theme Badges - WCAG 2.1 AA Compliant High Contrast */
+[data-theme="light"] .badge-primary {
+  background: #EBF3FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+  font-weight: 700;
+}
+
+[data-theme="light"] .badge-secondary {
+  background: #F1F5F9;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+}
+
+[data-theme="light"] .badge-info {
+  background: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+[data-theme="light"] .badge-success {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+[data-theme="light"] .badge-warning {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+[data-theme="light"] .badge-danger {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
 
 /* ===================== PAGINATION ===================== */
 .pagination {

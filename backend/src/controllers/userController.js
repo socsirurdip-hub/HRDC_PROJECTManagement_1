@@ -60,20 +60,41 @@ const updateUser = asyncHandler(async (req, res, next) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
 
+  const existingUser = await User.findById(req.params.id);
+  if (!existingUser) return next(new ApiError('User not found', 404));
+
+  // Capture before/after delta for immutable audit logging
+  const delta = {};
+  allowedFields.forEach((field) => {
+    if (updates[field] !== undefined && String(updates[field]) !== String(existingUser[field])) {
+      delta[field] = {
+        oldValue: existingUser[field],
+        newValue: updates[field],
+      };
+    }
+  });
+
   const user = await User.findByIdAndUpdate(req.params.id, updates, {
     new: true,
     runValidators: true,
   }).select('-password');
 
-  if (!user) return next(new ApiError('User not found', 404));
-
+  // Mandatory CERT-In / MeitY Immutable Audit Trail
   await createAuditLog({
     user: req.user,
+    userName: req.user?.name,
+    userRole: req.user?.role,
     action: 'USER_UPDATED',
     resource: 'User',
     resourceId: req.params.id,
-    details: updates,
+    details: {
+      targetUserName: user.name,
+      targetUserEmail: user.email,
+      modifiedBy: req.user?.email,
+      changes: delta,
+    },
     ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
   });
 
   res.status(200).json({ success: true, data: user });

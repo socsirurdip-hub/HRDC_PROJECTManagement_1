@@ -64,4 +64,19 @@ auditLogSchema.index({ action: 1 });
 auditLogSchema.index({ createdAt: -1 });
 auditLogSchema.index({ resource: 1 });
 
+// CERT-In & MeitY Immutability Guarantee: Prevent any modification or deletion of audit logs
+const preventMutation = function (next) {
+  const err = new Error('CERT-In Compliance Violation: Audit logs are strictly immutable and cannot be updated or deleted.');
+  err.statusCode = 403;
+  next(err);
+};
+
+auditLogSchema.pre('updateOne', preventMutation);
+auditLogSchema.pre('updateMany', preventMutation);
+auditLogSchema.pre('findOneAndUpdate', preventMutation);
+auditLogSchema.pre('deleteOne', preventMutation);
+auditLogSchema.pre('deleteMany', preventMutation);
+auditLogSchema.pre('findOneAndDelete', preventMutation);
+auditLogSchema.pre('findOneAndRemove', preventMutation);
+
 module.exports = mongoose.model('AuditLog', auditLogSchema);

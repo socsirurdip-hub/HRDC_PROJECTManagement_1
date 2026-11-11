@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Shield, Trash2, X } from 'lucide-react';
+import { Plus, Shield, Trash2, Edit2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { usersApi } from '../../api/services';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
@@ -10,6 +10,7 @@ import type { User } from '../../types';
 const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Users query
   const { data: usersData, isLoading } = useQuery({
@@ -49,8 +50,8 @@ const UsersPage: React.FC = () => {
 
   const users: User[] = usersData?.data?.data || [];
 
-  // Form for creating new user
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>();
+  // Form for creating / editing user
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<any>();
 
   const createMutation = useMutation({
     mutationFn: (data: any) => usersApi.create(data),
@@ -65,8 +66,58 @@ const UsersPage: React.FC = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => usersApi.update(id, data),
+    onSuccess: () => {
+      toast.success('User updated and logged to immutable audit trail');
+      setIsModalOpen(false);
+      setEditingUser(null);
+      reset();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
+  });
+
+  const openCreateModal = () => {
+    setEditingUser(null);
+    reset({
+      name: '',
+      email: '',
+      password: '',
+      role: 'admin',
+      department: '',
+      phone: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (u: User) => {
+    setEditingUser(u);
+    setValue('name', u.name);
+    setValue('email', u.email);
+    setValue('role', u.role);
+    setValue('department', u.department || '');
+    setValue('phone', u.phone || '');
+    setIsModalOpen(true);
+  };
+
   const onSubmit = (data: any) => {
-    createMutation.mutate(data);
+    if (editingUser) {
+      updateMutation.mutate({
+        id: editingUser._id,
+        data: {
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          department: data.department,
+          phone: data.phone,
+        },
+      });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -95,7 +146,7 @@ const UsersPage: React.FC = () => {
           </p>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn btn-primary" onClick={openCreateModal}>
           <Plus size={16} />
           Create New User
         </button>
@@ -158,14 +209,23 @@ const UsersPage: React.FC = () => {
                       {formatDate(u.createdAt)}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button
-                        className="btn btn-icon btn-secondary"
-                        style={{ color: 'var(--color-danger)' }}
-                        title="Delete User"
-                        onClick={() => handleDelete(u)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        <button
+                          className="btn btn-icon btn-secondary"
+                          title="Edit User"
+                          onClick={() => openEditModal(u)}
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                        <button
+                          className="btn btn-icon btn-secondary"
+                          style={{ color: 'var(--color-danger)' }}
+                          title="Delete User"
+                          onClick={() => handleDelete(u)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -175,12 +235,12 @@ const UsersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Create User Modal */}
+      {/* Create / Edit User Modal */}
       {isModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
           <div className="modal-container" style={{ maxWidth: '540px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Create New Administrative User</h2>
+              <h2 className="modal-title">{editingUser ? 'Edit Administrative User' : 'Create New Administrative User'}</h2>
               <button className="btn btn-icon btn-secondary" onClick={() => setIsModalOpen(false)}>
                 <X size={18} />
               </button>
@@ -209,16 +269,18 @@ const UsersPage: React.FC = () => {
                   {errors.email && <span className="form-error">{String(errors.email.message)}</span>}
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Initial Password *</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    placeholder="Min 6 characters"
-                    {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Minimum 6 chars' } })}
-                  />
-                  {errors.password && <span className="form-error">{String(errors.password.message)}</span>}
-                </div>
+                {!editingUser && (
+                  <div className="form-group">
+                    <label className="form-label">Initial Password *</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Min 6 characters"
+                      {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Minimum 6 chars' } })}
+                    />
+                    {errors.password && <span className="form-error">{String(errors.password.message)}</span>}
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">System Role *</label>
@@ -252,8 +314,16 @@ const UsersPage: React.FC = () => {
                 <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating...' : 'Create Account'}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? 'Saving...'
+                    : editingUser
+                    ? 'Save Changes'
+                    : 'Create Account'}
                 </button>
               </div>
             </form>

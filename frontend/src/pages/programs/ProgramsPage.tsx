@@ -1,16 +1,35 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, Download, Filter } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Download, Filter, SlidersHorizontal } from 'lucide-react';
 import { programsApi, reportsApi } from '../../api/services';
 import { formatDate, getErrorMessage, downloadFile } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import type { TrainingProgram } from '../../types';
 import ProgramFormModal from './ProgramFormModal';
 import ProgramDetailModal from './ProgramDetailModal';
+import { ColumnExportModal, type ColumnOption } from '../../components/ui/ColumnExportModal';
 import toast from 'react-hot-toast';
 
 const STATUSES = ['', 'Scheduled', 'Ongoing', 'Completed', 'Cancelled', 'Postponed'];
 const CATEGORIES = ['', 'Technical Training', 'Leadership Development', 'Soft Skills', 'Compliance', 'Safety', 'Research Methodology', 'IT & Digital Skills', 'Management Development', 'Other'];
+
+const PROGRAM_COLUMNS: ColumnOption[] = [
+  { key: 'programCode', label: 'Program Code', category: 'General' },
+  { key: 'title', label: 'Program Title', category: 'General' },
+  { key: 'category', label: 'Category', category: 'General' },
+  { key: 'mode', label: 'Delivery Mode', category: 'General' },
+  { key: 'status', label: 'Status', category: 'General' },
+  { key: 'startDate', label: 'Start Date', category: 'Schedule' },
+  { key: 'endDate', label: 'End Date', category: 'Schedule' },
+  { key: 'durationDays', label: 'Duration (Days)', category: 'Schedule' },
+  { key: 'state', label: 'State', category: 'Location' },
+  { key: 'district', label: 'District', category: 'Location' },
+  { key: 'maxParticipants', label: 'Max Capacity', category: 'Attendance' },
+  { key: 'enrolledCount', label: 'Enrolled Count', category: 'Attendance' },
+  { key: 'completedCount', label: 'Completed Count', category: 'Attendance' },
+  { key: 'completionRate', label: 'Completion Rate (%)', category: 'Attendance' },
+  { key: 'createdBy', label: 'Created By', category: 'Metadata' },
+];
 
 const ProgramsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -24,6 +43,7 @@ const ProgramsPage: React.FC = () => {
   const [editProgram, setEditProgram] = useState<TrainingProgram | null>(null);
   const [viewProgram, setViewProgram] = useState<TrainingProgram | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['programs', page, search, statusFilter, categoryFilter],
@@ -48,11 +68,15 @@ const ProgramsPage: React.FC = () => {
     }
   };
 
-  const handleExport = async (format: string) => {
+  const handleExport = async (format: string, columns?: string[]) => {
     setExportLoading(true);
     try {
-      const res = await reportsApi.exportPrograms({ format, status: statusFilter });
-      const ext = format === 'csv' ? 'csv' : 'xlsx';
+      const res = await reportsApi.exportPrograms({
+        format,
+        status: statusFilter,
+        columns: columns ? columns.join(',') : undefined,
+      });
+      const ext = format === 'csv' ? 'csv' : format === 'pdf' ? 'pdf' : 'xlsx';
       downloadFile(res.data, `programs_report.${ext}`);
       toast.success('Report exported successfully');
     } catch (err) {
@@ -80,21 +104,31 @@ const ProgramsPage: React.FC = () => {
         <div className="page-header-actions">
           <button
             className="btn btn-secondary btn-sm"
+            onClick={() => setIsColumnModalOpen(true)}
+            disabled={exportLoading}
+            id="custom-export-btn"
+            title="Choose specific fields and format to export"
+          >
+            <SlidersHorizontal size={14} />
+            Custom Export
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
             onClick={() => handleExport('excel')}
             disabled={exportLoading}
             id="export-excel-btn"
           >
             <Download size={14} />
-            Export Excel
+            Quick Excel
           </button>
           <button
             className="btn btn-secondary btn-sm"
-            onClick={() => handleExport('csv')}
+            onClick={() => handleExport('pdf')}
             disabled={exportLoading}
-            id="export-csv-btn"
+            id="export-pdf-btn"
           >
             <Download size={14} />
-            Export CSV
+            Quick PDF
           </button>
           {canEdit && (
             <button
@@ -297,6 +331,14 @@ const ProgramsPage: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <ColumnExportModal
+        isOpen={isColumnModalOpen}
+        onClose={() => setIsColumnModalOpen(false)}
+        title="Export Training Programs"
+        availableColumns={PROGRAM_COLUMNS}
+        onExport={(fmt, cols) => handleExport(fmt, cols)}
+        isExporting={exportLoading}
+      />
       {showForm && (
         <ProgramFormModal
           program={editProgram}

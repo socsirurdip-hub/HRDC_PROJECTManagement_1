@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, Download, Users, RefreshCw } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Download, Users, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { traineesApi, reportsApi } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
 import { getErrorMessage, downloadBlob } from '../../utils/helpers';
@@ -8,6 +8,31 @@ import toast from 'react-hot-toast';
 import type { Trainee } from '../../types';
 import TraineeDetailModal from './TraineeDetailModal';
 import TraineeFormModal from './TraineeFormModal';
+import { ColumnExportModal, type ColumnOption } from '../../components/ui/ColumnExportModal';
+
+const TRAINEE_COLUMNS: ColumnOption[] = [
+  { key: 'traineeId', label: 'Trainee ID', category: 'Identity' },
+  { key: 'firstName', label: 'First Name', category: 'Identity' },
+  { key: 'lastName', label: 'Last Name', category: 'Identity' },
+  { key: 'gender', label: 'Gender', category: 'Demographics' },
+  { key: 'socialCategory', label: 'Social Category', category: 'Demographics' },
+  { key: 'isMinority', label: 'Minority Status', category: 'Demographics' },
+  { key: 'isPWD', label: 'PWD Status', category: 'Demographics' },
+  { key: 'domicileType', label: 'Domicile Type', category: 'Demographics' },
+  { key: 'email', label: 'Email Address', category: 'Contact' },
+  { key: 'phone', label: 'Phone Number', category: 'Contact' },
+  { key: 'alternatePhone', label: 'Alternate Phone', category: 'Contact' },
+  { key: 'state', label: 'State', category: 'Location' },
+  { key: 'district', label: 'District', category: 'Location' },
+  { key: 'city', label: 'City', category: 'Location' },
+  { key: 'pincode', label: 'Pincode', category: 'Location' },
+  { key: 'highestQualification', label: 'Qualification', category: 'Education' },
+  { key: 'specialization', label: 'Specialization', category: 'Education' },
+  { key: 'institution', label: 'Institution', category: 'Education' },
+  { key: 'employmentStatus', label: 'Employment Status', category: 'Employment' },
+  { key: 'organization', label: 'Organization', category: 'Employment' },
+  { key: 'designation', label: 'Designation', category: 'Employment' },
+];
 
 const TraineesPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -28,6 +53,7 @@ const TraineesPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTrainee, setEditingTrainee] = useState<Trainee | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
   // Trainees query
   const { data: traineesData, isLoading, refetch } = useQuery({
@@ -61,15 +87,18 @@ const TraineesPage: React.FC = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'excel' | 'csv' | 'pdf' = 'excel', columns?: string[]) => {
     try {
       setIsExporting(true);
       const res = await reportsApi.exportTrainees({
+        format,
         gender: genderFilter || undefined,
         socialCategory: categoryFilter || undefined,
+        columns: columns ? columns.join(',') : undefined,
       });
-      downloadBlob(res.data, `trainees_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('Trainees exported successfully');
+      const ext = format === 'pdf' ? 'pdf' : format === 'csv' ? 'csv' : 'xlsx';
+      downloadBlob(res.data, `trainees_export_${new Date().toISOString().slice(0, 10)}.${ext}`);
+      toast.success(`Trainees ${format.toUpperCase()} exported successfully`);
     } catch (err) {
       toast.error('Failed to export trainees: ' + getErrorMessage(err));
     } finally {
@@ -98,10 +127,23 @@ const TraineesPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-secondary" onClick={handleExport} disabled={isExporting}>
-            <Download size={16} />
-            {isExporting ? 'Exporting...' : 'Export Excel'}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setIsColumnModalOpen(true)}
+            disabled={isExporting}
+            title="Choose specific fields and format to export"
+          >
+            <SlidersHorizontal size={14} />
+            Custom Export
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => handleExport('excel')} disabled={isExporting}>
+            <Download size={14} />
+            Quick Excel
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => handleExport('pdf')} disabled={isExporting}>
+            <Download size={14} />
+            Quick PDF
           </button>
           {canEdit && (
             <button
@@ -362,6 +404,16 @@ const TraineesPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Column Selection Export Modal */}
+      <ColumnExportModal
+        isOpen={isColumnModalOpen}
+        onClose={() => setIsColumnModalOpen(false)}
+        title="Export Trainee Directory"
+        availableColumns={TRAINEE_COLUMNS}
+        onExport={(fmt, cols) => handleExport(fmt, cols)}
+        isExporting={isExporting}
+      />
 
       {/* Trainee Form Modal (Add / Edit) */}
       {isFormOpen && (

@@ -44,6 +44,12 @@ export interface TrainingProgram {
   enrolledCount: number;
   completedCount: number;
   completionRate?: number;
+  allowNominations?: boolean;
+  nominationStartDate?: string;
+  nominationEndDate?: string;
+  nominationsCount?: number;
+  hasBatches?: boolean;
+  batchesCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,8 +85,82 @@ export interface Trainee {
   employmentStatus: string;
   organization?: string;
   designation?: string;
+  employeeId?: string;
+  registrationType?: 'SELF' | 'ADMIN_ENTRY';
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  domainWarning?: boolean;
+  domainWarningDetails?: string;
+  approvedBy?: { _id: string; name: string; email: string };
+  approvedAt?: string;
+  rejectionReason?: string;
+  activeNominations?: Array<{
+    _id: string;
+    programId?: string;
+    programCode?: string;
+    programTitle?: string;
+    status: 'INVITED' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'WAITLISTED';
+  }>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WillingnessDetails {
+  statementOfPurpose?: string;
+  reportingOfficerName?: string;
+  reportingOfficerDesignation?: string;
+  reportingOfficerEmail?: string;
+  accommodationRequired?: boolean;
+  specialAssistance?: string;
+  submittedAt?: string;
+}
+
+export interface Nomination {
+  _id: string;
+  program: TrainingProgram | string;
+  trainee: Trainee;
+  status: 'INVITED' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'WAITLISTED';
+  invitationDetails?: {
+    invitedBy?: { _id: string; name: string; email: string };
+    invitedAt?: string;
+    channel?: 'DIRECT_SELECT' | 'CRITERIA_BROADCAST' | 'OPEN_LINK';
+    targetCriteria?: {
+      organization?: string;
+      designation?: string;
+      state?: string;
+    };
+  };
+  willingnessDetails?: WillingnessDetails;
+  assignedBatch?: Batch | string;
+  mappedEnrollment?: string;
+  reviewedBy?: { _id: string; name: string; email: string };
+  reviewedAt?: string;
+  rejectionReason?: string;
+  submittedAt?: string;
+  createdAt?: string;
+}
+
+export interface TraineeFilterOptions {
+  organizations: string[];
+  designations: string[];
+  states: string[];
+}
+
+export interface Batch {
+  _id: string;
+  program: string;
+  batchCode: string;
+  batchName: string;
+  startDate: string;
+  endDate: string;
+  durationDays?: number;
+  maxCapacity: number;
+  assignedCount: number;
+  venueOrMeetingLink?: string;
+  coordinatorInCharge?: string;
+  status: 'Scheduled' | 'Active' | 'Completed' | 'Cancelled';
+  createdBy?: { _id: string; name: string; email: string };
+  enrollments?: Enrollment[];
+  createdAt: string;
 }
 
 export interface FeedbackData {
@@ -106,6 +186,8 @@ export interface Enrollment {
   postTestScore?: number;
   feedback?: FeedbackData;
   registeredBy?: string;
+  batch?: Batch | string;
+  nomination?: Nomination | string;
   scoreImprovement?: number;
   createdAt: string;
   updatedAt: string;
@@ -195,6 +277,10 @@ export interface ProgramFormData {
   maxParticipants: number;
   status: string;
   outcomes?: string;
+  allowNominations?: boolean;
+  nominationStartDate?: string;
+  nominationEndDate?: string;
+  hasBatches?: boolean;
 }
 
 export interface TraineeFormData {

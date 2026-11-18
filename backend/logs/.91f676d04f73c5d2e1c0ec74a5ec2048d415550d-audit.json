@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 180
+    },
+    "auditLog": "F:\\DeveloperZone\\HRDC_PROJECT_DASHBOARD-1\\backend\\logs\\.91f676d04f73c5d2e1c0ec74a5ec2048d415550d-audit.json",
+    "files": [
+        {
+            "date": 1794980838328,
+            "name": "F:\\DeveloperZone\\HRDC_PROJECT_DASHBOARD-1\\backend\\logs\\combined-2026-11-18.log",
+            "hash": "a35ab0d4251a3f9e993568fe4a931825e2422b91128ac7a638d5b96df398d9f2"
+        }
+    ],
+    "hashType": "sha256"
+}

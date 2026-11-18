@@ -122,6 +122,41 @@ const traineeSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    employeeId: {
+      type: String,
+      trim: true,
+    },
+    // Registration & Approval Status
+    registrationType: {
+      type: String,
+      enum: ['SELF', 'ADMIN_ENTRY'],
+      default: 'ADMIN_ENTRY',
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      default: 'APPROVED',
+      index: true,
+    },
+    domainWarning: {
+      type: Boolean,
+      default: false,
+    },
+    domainWarningDetails: {
+      type: String,
+      trim: true,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
@@ -135,11 +170,15 @@ traineeSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Auto-generate trainee ID
+// Auto-generate trainee ID or application ID
 traineeSchema.pre('save', async function (next) {
   if (!this.traineeId) {
     const count = await mongoose.model('Trainee').countDocuments();
-    this.traineeId = `HRDC-${String(count + 1).padStart(6, '0')}`;
+    if (this.approvalStatus === 'PENDING') {
+      this.traineeId = `HRDC-APP-${String(count + 1).padStart(6, '0')}`;
+    } else {
+      this.traineeId = `HRDC-${String(count + 1).padStart(6, '0')}`;
+    }
   }
   next();
 });

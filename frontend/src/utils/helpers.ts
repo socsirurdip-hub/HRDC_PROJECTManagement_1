@@ -96,3 +96,14 @@ export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';
 };
+
+/**
+ * Checks whether an email address belongs to authorized Government / Research domains:
+ * @csir.res.in, @*.gov.in, @*.res.in, @nic.in
+ */
+export const isTrustedGovEmail = (email: string | undefined): boolean => {
+  if (!email || typeof email !== 'string') return false;
+  const cleanEmail = email.trim().toLowerCase();
+  const govRegex = /@([a-zA-Z0-9-]+\.)*(csir\.res\.in|gov\.in|res\.in|nic\.in)$/i;
+  return govRegex.test(cleanEmail);
+};

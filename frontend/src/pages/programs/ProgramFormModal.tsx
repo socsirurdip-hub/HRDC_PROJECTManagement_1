@@ -38,10 +38,16 @@ const ProgramFormModal: React.FC<Props> = ({ program, onClose, onSuccess }) => {
       maxParticipants: program.maxParticipants,
       status: program.status,
       outcomes: program.outcomes,
+      allowNominations: program.allowNominations || false,
+      nominationStartDate: program.nominationStartDate?.split('T')[0],
+      nominationEndDate: program.nominationEndDate?.split('T')[0],
+      hasBatches: program.hasBatches || false,
     } : {
       mode: 'Offline',
       status: 'Scheduled',
       maxParticipants: 50,
+      allowNominations: true,
+      hasBatches: false,
     },
   });
 
@@ -184,6 +190,45 @@ const ProgramFormModal: React.FC<Props> = ({ program, onClose, onSuccess }) => {
             <div className="form-group">
               <label className="form-label">Expected Outcomes</label>
               <textarea className="form-control" id="outcomes" rows={2} placeholder="What participants will learn..." {...register('outcomes')} />
+            </div>
+
+            {/* Nomination & Batch Settings */}
+            <div style={{
+              background: 'rgba(200, 150, 62, 0.05)',
+              border: '1px solid rgba(200, 150, 62, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px 16px',
+              marginTop: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-secondary)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                Nominations & Batch Cohort Settings
+              </div>
+
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--color-text-primary)' }}>
+                  <input type="checkbox" {...register('allowNominations')} />
+                  <strong>Allow Participant Nominations</strong>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--color-text-primary)' }}>
+                  <input type="checkbox" {...register('hasBatches')} />
+                  <strong>Enable Staggered / Multi-Batch Cohorts</strong>
+                </label>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Nomination Window Start Date</label>
+                  <input type="date" className="form-control" id="nominationStartDate" {...register('nominationStartDate')} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nomination Window End Date</label>
+                  <input type="date" className="form-control" id="nominationEndDate" {...register('nominationEndDate')} />
+                </div>
+              </div>
             </div>
           </div>
 

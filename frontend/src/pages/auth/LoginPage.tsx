@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn, Shield } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff, LogIn, Shield, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/services';
 import { getErrorMessage } from '../../utils/helpers';
@@ -152,6 +152,35 @@ const LoginPage: React.FC = () => {
             )}
           </button>
         </form>
+
+        {/* Master Trainee Registration CTA */}
+        <div style={{
+          marginTop: '20px',
+          padding: '12px 16px',
+          background: 'rgba(200, 150, 62, 0.08)',
+          border: '1px solid rgba(200, 150, 62, 0.25)',
+          borderRadius: 'var(--radius-md)',
+          textAlign: 'center',
+          fontSize: '13px',
+        }}>
+          <span style={{ color: 'var(--color-text-secondary)' }}>Are you a Scientist, Officer, or Trainee? </span>
+          <br />
+          <Link
+            to="/register-trainee"
+            style={{
+              color: 'var(--color-secondary)',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginTop: '6px',
+              textDecoration: 'none',
+            }}
+          >
+            <UserPlus size={15} />
+            Register in Master Trainee Directory
+          </Link>
+        </div>
 
         {/* Demo credentials */}
         <div

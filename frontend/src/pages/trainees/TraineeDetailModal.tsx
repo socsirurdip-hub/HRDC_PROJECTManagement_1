@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, User, MapPin, GraduationCap, Award } from 'lucide-react';
+import { X, User, MapPin, GraduationCap, Award, AlertTriangle, CheckCircle } from 'lucide-react';
 import { enrollmentsApi } from '../../api/services';
 import { formatDate } from '../../utils/helpers';
 import type { Trainee, Enrollment } from '../../types';
@@ -8,9 +8,11 @@ import type { Trainee, Enrollment } from '../../types';
 interface TraineeDetailModalProps {
   trainee: Trainee;
   onClose: () => void;
+  onApprove?: (trainee: Trainee) => void;
+  onReject?: (trainee: Trainee) => void;
 }
 
-const TraineeDetailModal: React.FC<TraineeDetailModalProps> = ({ trainee, onClose }) => {
+const TraineeDetailModal: React.FC<TraineeDetailModalProps> = ({ trainee, onClose, onApprove, onReject }) => {
   const { data: enrollmentsData, isLoading: loadingEnrollments } = useQuery({
     queryKey: ['enrollments-trainee', trainee._id],
     queryFn: () => enrollmentsApi.getByTrainee(trainee._id),
@@ -28,8 +30,14 @@ const TraineeDetailModal: React.FC<TraineeDetailModalProps> = ({ trainee, onClos
         {/* Modal Header */}
         <div className="modal-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
               <span className="badge badge-primary">{trainee.traineeId}</span>
+              <span className={`badge ${
+                trainee.approvalStatus === 'APPROVED' ? 'badge-success' :
+                trainee.approvalStatus === 'REJECTED' ? 'badge-danger' : 'badge-warning'
+              }`}>
+                {trainee.approvalStatus || 'APPROVED'}
+              </span>
               <span className="badge badge-secondary">{trainee.socialCategory}</span>
               {trainee.isPWD && <span className="badge badge-warning">PWD</span>}
               {trainee.isMinority && <span className="badge badge-info">Minority</span>}
@@ -45,6 +53,38 @@ const TraineeDetailModal: React.FC<TraineeDetailModalProps> = ({ trainee, onClos
 
         {/* Modal Body */}
         <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Domain Warning Alert */}
+          {trainee.domainWarning && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(243, 156, 18, 0.1)',
+              border: '1px solid rgba(243, 156, 18, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              color: 'var(--color-warning)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <AlertTriangle size={16} />
+              <span>
+                <strong>Non-Government Domain Alert:</strong> The registered email (<code>{trainee.email}</code>) is outside the pre-approved CSIR/Govt whitelist. Please verify official employment credentials before approving.
+              </span>
+            </div>
+          )}
+
+          {trainee.approvalStatus === 'REJECTED' && trainee.rejectionReason && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(231, 76, 60, 0.1)',
+              border: '1px solid rgba(231, 76, 60, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              color: 'var(--color-danger)',
+            }}>
+              <strong>Rejection Reason:</strong> {trainee.rejectionReason}
+            </div>
+          )}
           {/* Key Trainee Info Grid */}
           <div className="grid grid-2" style={{ gap: '16px' }}>
             {/* Contact & Personal */}
@@ -224,7 +264,37 @@ const TraineeDetailModal: React.FC<TraineeDetailModalProps> = ({ trainee, onClos
         </div>
 
         {/* Modal Footer */}
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            {trainee.approvalStatus === 'PENDING' && onApprove && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  style={{ background: 'var(--color-success)', borderColor: 'var(--color-success)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => {
+                    onClose();
+                    onApprove(trainee);
+                  }}
+                >
+                  <CheckCircle size={14} /> Approve Trainee
+                </button>
+                {onReject && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    onClick={() => {
+                      onClose();
+                      onReject(trainee);
+                    }}
+                  >
+                    <X size={14} /> Reject Registration
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <button className="btn btn-secondary" onClick={onClose}>
             Close
           </button>

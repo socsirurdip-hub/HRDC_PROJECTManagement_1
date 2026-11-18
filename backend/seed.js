@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -16,12 +17,16 @@ const seedData = async () => {
     const TrainingProgram = require('./src/models/TrainingProgram');
     const Trainee = require('./src/models/Trainee');
     const Enrollment = require('./src/models/Enrollment');
+    const Nomination = require('./src/models/Nomination');
+    const Batch = require('./src/models/Batch');
 
     // Clear existing data
     await User.deleteMany({});
     await TrainingProgram.deleteMany({});
     await Trainee.deleteMany({});
     await Enrollment.deleteMany({});
+    await Nomination.deleteMany({});
+    await Batch.deleteMany({});
 
     // Create Super Admin
     const superAdmin = await User.create({
@@ -147,6 +152,11 @@ const seedData = async () => {
         status: 'Scheduled',
         enrolledCount: 30,
         completedCount: 0,
+        allowNominations: true,
+        nominationStartDate: new Date('2024-07-01'),
+        nominationEndDate: new Date('2024-08-30'),
+        hasBatches: true,
+        batchesCount: 2,
         createdBy: admins[1]._id,
       },
       {
@@ -242,8 +252,102 @@ const seedData = async () => {
     const traineesWithIds = traineesData.map((t, idx) => ({
       ...t,
       traineeId: `HRDC-${String(idx + 1).padStart(6, '0')}`,
+      approvalStatus: 'APPROVED',
+      registrationType: 'ADMIN_ENTRY',
+      domainWarning: false,
     }));
+
+    // Add sample self-registered trainees awaiting Super Admin approval
+    traineesWithIds.push(
+      {
+        firstName: 'Dr. Sandeep',
+        lastName: 'Kulkarni',
+        gender: 'Male',
+        socialCategory: 'General',
+        domicileType: 'Urban',
+        email: 'sandeep.k@ncl.res.in',
+        phone: '9822001122',
+        address: { state: 'Maharashtra', district: 'Pune', city: 'Pune', pincode: '411008' },
+        highestQualification: 'PhD',
+        employmentStatus: 'Government Employee',
+        organization: 'CSIR-NCL',
+        designation: 'Senior Scientist',
+        isPWD: false,
+        traineeId: 'HRDC-APP-000009',
+        approvalStatus: 'PENDING',
+        registrationType: 'SELF',
+        domainWarning: false,
+      },
+      {
+        firstName: 'Rahul',
+        lastName: 'Verma',
+        gender: 'Male',
+        socialCategory: 'OBC',
+        domicileType: 'Semi-Urban',
+        email: 'rahul.verma@innovatetech.org',
+        phone: '9833445566',
+        address: { state: 'Delhi', district: 'South Delhi', city: 'New Delhi', pincode: '110016' },
+        highestQualification: 'Post Graduate',
+        employmentStatus: 'Private Sector',
+        organization: 'InnovateTech Systems',
+        designation: 'Research Associate',
+        isPWD: false,
+        traineeId: 'HRDC-APP-000010',
+        approvalStatus: 'PENDING',
+        registrationType: 'SELF',
+        domainWarning: true,
+        domainWarningDetails: 'Non-Government Email Domain: Manual verification required by Super Admin',
+      }
+    );
+
     const trainees = await Trainee.insertMany(traineesWithIds);
+
+    // Create Batches for Safety & Compliance Training (HRDC-2024-004)
+    const batches = await Batch.insertMany([
+      {
+        program: programs[3]._id,
+        batchCode: 'BATCH-01',
+        batchName: 'Batch 1 - Western & Southern Labs',
+        startDate: new Date('2024-08-05'),
+        endDate: new Date('2024-08-06'),
+        maxCapacity: 25,
+        assignedCount: 1,
+        venueOrMeetingLink: 'CSIR-CECRI Lab Campus, Hall A',
+        coordinatorInCharge: 'Priya Sharma',
+        status: 'Scheduled',
+        createdBy: admins[1]._id,
+      },
+      {
+        program: programs[3]._id,
+        batchCode: 'BATCH-02',
+        batchName: 'Batch 2 - Northern & Eastern Labs',
+        startDate: new Date('2024-08-12'),
+        endDate: new Date('2024-08-13'),
+        maxCapacity: 25,
+        assignedCount: 0,
+        venueOrMeetingLink: 'CSIR-CECRI Lab Campus, Hall B',
+        coordinatorInCharge: 'Priya Sharma',
+        status: 'Scheduled',
+        createdBy: admins[1]._id,
+      },
+    ]);
+
+    // Create a Sample Nomination for HRDC-2024-004
+    await Nomination.create({
+      program: programs[3]._id,
+      trainee: trainees[0]._id, // Dr. Anita Sharma
+      status: 'APPROVED',
+      willingnessDetails: {
+        statementOfPurpose: 'Eager to update laboratory biosafety practices and compliance protocols.',
+        reportingOfficerName: 'Dr. V. K. Patel',
+        reportingOfficerDesignation: 'Director, CSIR-CDRI',
+        reportingOfficerEmail: 'director@cdri.res.in',
+        accommodationRequired: true,
+      },
+      assignedBatch: batches[0]._id,
+      reviewedBy: admins[1]._id,
+      reviewedAt: new Date('2024-07-15'),
+    });
 
     // Create Enrollments
     await Enrollment.insertMany([

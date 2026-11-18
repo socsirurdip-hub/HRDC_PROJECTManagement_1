@@ -93,6 +93,14 @@ const enrollmentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    batch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Batch',
+    },
+    nomination: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Nomination',
+    },
   },
   {
     timestamps: true,

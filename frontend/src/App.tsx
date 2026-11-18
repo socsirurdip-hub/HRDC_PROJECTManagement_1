@@ -15,6 +15,8 @@ import TraineesPage from './pages/trainees/TraineesPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import UsersPage from './pages/users/UsersPage';
 import AuditLogsPage from './pages/audit/AuditLogsPage';
+import TraineeSelfRegistrationPage from './pages/trainees/TraineeSelfRegistrationPage';
+import ProgramNominationPage from './pages/programs/ProgramNominationPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,8 +57,11 @@ const App: React.FC = () => {
       />
       <BrowserRouter>
         <Routes>
-          {/* Public Route */}
+          {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register-trainee" element={<TraineeSelfRegistrationPage />} />
+          <Route path="/nominate/:idOrCode" element={<ProgramNominationPage />} />
+          <Route path="/programs/:idOrCode/nominate" element={<ProgramNominationPage />} />
 
           {/* Protected Routes inside AppLayout */}
           <Route element={<ProtectedRoute />}>

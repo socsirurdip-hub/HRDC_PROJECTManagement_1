@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, Download, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Download, Filter, SlidersHorizontal, UserPlus } from 'lucide-react';
 import { programsApi, reportsApi } from '../../api/services';
 import { formatDate, getErrorMessage, downloadFile } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import type { TrainingProgram } from '../../types';
 import ProgramFormModal from './ProgramFormModal';
 import ProgramDetailModal from './ProgramDetailModal';
+import TargetedInviteModal from './TargetedInviteModal';
 import { ColumnExportModal, type ColumnOption } from '../../components/ui/ColumnExportModal';
 import toast from 'react-hot-toast';
 
@@ -42,6 +43,7 @@ const ProgramsPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editProgram, setEditProgram] = useState<TrainingProgram | null>(null);
   const [viewProgram, setViewProgram] = useState<TrainingProgram | null>(null);
+  const [inviteModalProgram, setInviteModalProgram] = useState<TrainingProgram | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
@@ -263,13 +265,28 @@ const ProgramsPage: React.FC = () => {
                           style={{ width: `${Math.min((p.enrolledCount / p.maxParticipants) * 100, 100)}%` }}
                         />
                       </div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-primary-light)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <UserPlus size={10} />
+                        <span>{p.nominationsCount || 0} Invited</span>
+                      </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {p.status !== 'Completed' && p.status !== 'Cancelled' && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => setInviteModalProgram(p)}
+                            title="Invite Master Trainees (Lab-wise / Designation-wise)"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px' }}
+                            id={`invite-program-${p._id}`}
+                          >
+                            <UserPlus size={12} /> Invite
+                          </button>
+                        )}
                         <button
                           className="btn btn-secondary btn-sm btn-icon"
                           onClick={() => setViewProgram(p)}
-                          title="View details"
+                          title="View details & nominations"
                           id={`view-program-${p._id}`}
                         >
                           <Eye size={13} />
@@ -354,6 +371,18 @@ const ProgramsPage: React.FC = () => {
         <ProgramDetailModal
           program={viewProgram}
           onClose={() => setViewProgram(null)}
+        />
+      )}
+      {inviteModalProgram && (
+        <TargetedInviteModal
+          isOpen={Boolean(inviteModalProgram)}
+          onClose={() => setInviteModalProgram(null)}
+          programId={inviteModalProgram._id}
+          programTitle={inviteModalProgram.title}
+          programCode={inviteModalProgram.programCode}
+          onInvitedSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['programs'] });
+          }}
         />
       )}
     </div>

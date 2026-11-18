@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -20,6 +21,8 @@ const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const nominationRoutes = require('./routes/nominationRoutes');
+const batchRoutes = require('./routes/batchRoutes');
 
 const app = express();
 
@@ -117,6 +120,8 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/nominations', nominationRoutes);
+app.use('/api/batches', batchRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

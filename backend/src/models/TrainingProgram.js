@@ -102,6 +102,29 @@ const trainingProgramSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Nominations & Batch Management Settings
+    allowNominations: {
+      type: Boolean,
+      default: false,
+    },
+    nominationStartDate: {
+      type: Date,
+    },
+    nominationEndDate: {
+      type: Date,
+    },
+    nominationsCount: {
+      type: Number,
+      default: 0,
+    },
+    hasBatches: {
+      type: Boolean,
+      default: false,
+    },
+    batchesCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
